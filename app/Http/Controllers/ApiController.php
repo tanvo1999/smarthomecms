@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
-use JWTAuth;
 use App\Users;
+use Tymon\JWTAuth\Exceptions\JWTException;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class ApiController extends Controller
 {
@@ -18,7 +19,7 @@ class ApiController extends Controller
     {
         $username = $request->username;
         $password = $request->password;
-        if (!$token = auth('api')->attempt(['username' => $username, 'password' => $password])) {
+        if (!$token = JWTAuth::attempt(['username' => $username, 'password' => $password])) {
             return response()->json([
                 'success' => false,
                 'messager' => "Đăng nhập thất bại",
@@ -32,6 +33,28 @@ class ApiController extends Controller
             'messager' => "Đăng nhập thành công",
             'data' => $data
         ]);
+    }
+
+    public function logout(Request $request)
+    {
+        try {
+            $customer = Users::find(JWTAuth::user()->id);
+            if ($customer->fcm_token == $request->fcm_token) {
+                $customer->fcm_token = '';
+                $customer->save();
+            }
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Đăng xuất thành công',
+            ]);
+        } catch (JWTException $e) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Đăng xuất thất bại',
+            ]);
+        } catch (\Tymon\JWTAuth\Exceptions\TokenExpiredException $e) {
+        }
     }
 
     public function thayDoiMatKhau(Request $request)
@@ -76,16 +99,18 @@ class ApiController extends Controller
             $user->name = $request->name;
             $user->phone = $request->phone;
             $user->save();
-            if (!$token = auth('api')->attempt(['username' => $request->username, 'password' => $request->mat_khau])) {
+            if (!$token = JWTAuth::attempt(['username' => $request->username, 'password' => $request->mat_khau])) {
                 return response()->json([
                     'success' => false,
                     'messager' => "Cập nhật thất bại",
                 ]);
             } else {
+                $user->access_token = $token;
+                $user->save();
                 return response()->json([
                     'success' => true,
                     'messager' => "Cập nhật thành công",
-                    'token' => $token,
+                    'data' => $user
                 ]);
             }
         }

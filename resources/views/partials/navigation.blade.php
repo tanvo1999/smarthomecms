@@ -192,7 +192,7 @@
 
             <!-- LOGO -->
             <div class="logo-box">
-                <a href="index.html" class="logo text-center">
+                <a href="/" class="logo text-center">
                     <span class="logo-lg">
                      <img src="{{asset('assets/images/logo-dark.png') }}" alt="" height="26">
                         <!-- <span class="logo-lg-text-dark">Upvex</span> -->
